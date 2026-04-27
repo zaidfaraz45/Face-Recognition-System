@@ -2,6 +2,7 @@ import tqdm
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from model import CNN
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, random_split
 
@@ -41,37 +42,6 @@ train_loader = DataLoader(
 num_classes = len(dataset.classes)
 print("\nClasses:", dataset.classes, end='\n\n')
 
-# CNN model
-class CNN(nn.Module):
-    def __init__(self, num_classes):
-        super(CNN, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-        
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(64 * 12 * 12, 128),
-            nn.LeakyReLU(),
-            nn.Dropout(0.6),  # Add dropout for regularization
-            nn.Linear(128, num_classes)
-        )
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.fc(x)
-        return x
-    
 # Initialize the model
 model = CNN(num_classes).to(device)
 

@@ -17,7 +17,7 @@ for person in os.listdir(input_path):
 
     # Skip if already processed
     if len(os.listdir(person_output)) > 0:
-        print(person, "faces already detected! Skipping...")
+        print(person, "Faces already detected! Skipping...")
         continue
 
     count = 0
@@ -35,7 +35,7 @@ for person in os.listdir(input_path):
         faces = face_cascade.detectMultiScale(
             gray,
             scaleFactor=1.1,
-            minNeighbors=10,
+            minNeighbors=15,
             minSize=(120, 120)
         )
 

@@ -1,61 +1,28 @@
 import cv2
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import os
 import csv
+from model import CNN
 from datetime import datetime
 from torchvision import transforms, datasets
 from PIL import Image
 
-# ── Device — same as train.py and test.py ────────────────────────────────────
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 print("Using device:", device)
 
-# ── Same CNN as train.py and test.py — no changes ────────────────────────────
-class CNN(nn.Module):
-    def __init__(self, num_classes):
-        super(CNN, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(64 * 12 * 12, 128),
-            nn.LeakyReLU(),
-            nn.Dropout(0.6),
-            nn.Linear(128, num_classes)
-        )
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.fc(x)
-        return x
-
-# ── Load class names ──────────────────────────────────────────────────────────
+# Load class names 
 data_path = 'faces'
 dataset = datasets.ImageFolder(root=data_path)
 class_names = dataset.classes
 num_classes = len(dataset.classes)
 print("\nClasses:", class_names, end='\n\n')
 
-# ── Load trained model ────────────────────────────────────────────────────────
+# Load trained model 
 model = CNN(num_classes).to(device)
 model.load_state_dict(torch.load("face_model.pth", map_location=device))
 model.eval()
 
-# ── Transform — same as test.py ───────────────────────────────────────────────
 transform = transforms.Compose([
     transforms.Resize((100, 100)),
     transforms.ToTensor(),
@@ -65,12 +32,10 @@ transform = transforms.Compose([
     )
 ])
 
-# ── Face cascade — same as detect.py ─────────────────────────────────────────
 face_cascade = cv2.CascadeClassifier(
     cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
 )
 
-# ── Attendance ────────────────────────────────────────────────────────────────
 ATTENDANCE_FILE = "attendance/attendance.csv"
 os.makedirs("attendance", exist_ok=True)
 
@@ -104,7 +69,7 @@ def mark_attendance(name):
     else:
         print(f"[!] {name} already marked today ({date_str})")
 
-# ── Predict face ──────────────────────────────────────────────────────────────
+# Predict face 
 def predict_face(face_bgr):
     face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
     pil_img  = Image.fromarray(face_rgb)
@@ -117,7 +82,7 @@ def predict_face(face_bgr):
 
     return class_names[idx.item()], conf.item()
 
-# ── Camera loop ───────────────────────────────────────────────────────────────
+# Camera loop 
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("[ERROR] Cannot open camera")
@@ -149,7 +114,7 @@ while True:
 
         name, conf = predict_face(face_crop)
 
-        if conf >= 0.75:
+        if conf >= 0.95:
             label     = f"{name}  {conf*100:.1f}%"
             box_color = (0, 200, 80)     # green
 
@@ -186,7 +151,7 @@ while True:
     cv2.imshow("Face Recognition - Attendance", frame)
 
     key = cv2.waitKey(1) & 0xFF
-    if key in (ord('q'), ord('Q'), 27):    # Q or ESC
+    if key in (ord('e'), ord('E'), 27):    # E or ESC to exit window
         break
 
 cap.release()
