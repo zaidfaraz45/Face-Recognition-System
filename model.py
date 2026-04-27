@@ -1,10 +1,10 @@
-from torch import nn
+import torch.nn as nn
 
 class CNN(nn.Module):
     def __init__(self, num_classes):
         super(CNN, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 32, 3, padding=1), 
+            nn.Conv2d(3, 32, 3, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
             nn.MaxPool2d(2, 2),
@@ -14,13 +14,13 @@ class CNN(nn.Module):
             nn.LeakyReLU(),
             nn.MaxPool2d(2, 2),
 
-            nn.Conv2d(64, 128, 3, padding=1), 
+            nn.Conv2d(64, 128, 3, padding=1),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(),
             nn.MaxPool2d(2, 2)
         )
         
-        self.pool = nn.AdaptiveAvgPool2d((4, 4)) 
+        self.pool = nn.AdaptiveAvgPool2d((4, 4))
 
         self.fc = nn.Sequential(
             nn.Flatten(),

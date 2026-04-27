@@ -47,10 +47,10 @@ model = CNN(num_classes).to(device)
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0005)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-3)  # weight decay for regularization
 
 # Training loop
-epochs = 50
+epochs = 75
 
 for epoch in range(epochs):
     total_loss = 0

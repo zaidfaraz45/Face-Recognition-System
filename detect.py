@@ -47,7 +47,15 @@ for person in os.listdir(input_path):
         faces = faces[:1]
 
         for (x, y, w, h) in faces:
-            face = img[y:y+h, x:x+w]
+            pad_w = int(w * 0.15)
+            pad_h = int(h * 0.15)
+            
+            y1 = max(0, y - pad_h)
+            y2 = min(img.shape[0], y + h + pad_h)
+            x1 = max(0, x - pad_w)
+            x2 = min(img.shape[1], x + w + pad_w)
+            
+            face = img[y1:y2, x1:x2]
             
             # Resize for CNN
             face = cv2.resize(face, (100, 100))

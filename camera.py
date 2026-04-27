@@ -91,6 +91,7 @@ if not cap.isOpened():
 print("Camera started. Press Q or ESC to quit.\n")
 
 marked_today = set()
+stable_detections = {}
 
 while True:
     ret, frame = cap.read()
@@ -106,15 +107,22 @@ while True:
         minNeighbors=10,
         minSize=(120, 120)
     )
+    
+    current_faces_on_screen = set()
 
     for (x, y, w, h) in faces:
-        face_crop = frame[y:y+h, x:x+w]
+        pad_w, pad_h = int(w * 0.15), int(h * 0.15)
+        y1, y2 = max(0, y - pad_h), min(frame.shape[0], y + h + pad_h)
+        x1, x2 = max(0, x - pad_w), min(frame.shape[1], x + w + pad_w)
+        
+        face_crop = frame[y1:y2, x1:x2]
+        
         if face_crop.size == 0:
             continue
 
         name, conf = predict_face(face_crop)
 
-        if conf >= 0.95:
+        if conf >= 0.85:
             label     = f"{name}  {conf*100:.1f}%"
             box_color = (0, 200, 80)     # green
 
@@ -139,6 +147,10 @@ while True:
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6, (255, 255, 255), 1, cv2.LINE_AA
         )
+
+    for tracked_name in list(stable_detections.keys()):
+        if tracked_name not in current_faces_on_screen:
+            stable_detections[tracked_name] = 0
 
     # Face count on screen
     cv2.putText(
