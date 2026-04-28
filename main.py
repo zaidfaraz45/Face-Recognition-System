@@ -9,13 +9,12 @@ from torchvision import transforms, datasets
 from PIL import Image
 
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config 
 CONFIDENCE_THRESHOLD = 0.85   # top-1 confidence must exceed this
 MARGIN_THRESHOLD     = 0.20   # top-1 must beat top-2 by at least this margin
 STABLE_FRAMES_NEEDED = 8      # consecutive agreeing frames before marking
 ATTENDANCE_FILE      = "attendance/attendance.csv"
 DATA_PATH            = "faces"
-# ──────────────────────────────────────────────────────────────────────────────
 
 # Device agnostic code
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -45,8 +44,7 @@ face_cascade = cv2.CascadeClassifier(
 os.makedirs("attendance", exist_ok=True)
 
 
-# ── Attendance helpers ────────────────────────────────────────────────────────
-
+# Attendance helpers 
 def mark_attendance(name: str) -> None:
     """Write one attendance row for `name` if not already marked today."""
     now      = datetime.now()
@@ -70,16 +68,9 @@ def mark_attendance(name: str) -> None:
     print(f"[✔] Attendance marked for {name} | {date_str} {time_str}")
 
 
-# ── Face prediction with ambiguity check ─────────────────────────────────────
+# Face prediction with ambiguity check 
 
 def predict_face(face_bgr) -> tuple[str, float, bool]:
-    """
-    Returns (name, confidence, is_certain).
-
-    is_certain is False when:
-      - top-1 confidence < CONFIDENCE_THRESHOLD, OR
-      - the margin between top-1 and top-2 < MARGIN_THRESHOLD  ← ambiguity fix
-    """
     face_rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
     tensor   = transform(Image.fromarray(face_rgb)).unsqueeze(0).to(device)
 
@@ -101,7 +92,7 @@ def predict_face(face_bgr) -> tuple[str, float, bool]:
     return top1_name, top1_conf, is_certain
 
 
-# ── Camera loop ───────────────────────────────────────────────────────────────
+# Camera loop 
 
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
@@ -111,7 +102,6 @@ if not cap.isOpened():
 print("Camera started. Press E or ESC to quit.\n")
 
 marked_today     : set[str]        = set()
-# stable_detections: name → consecutive frames that agree on this name
 stable_detections: dict[str, int]  = {}
 
 while True:
@@ -147,7 +137,6 @@ while True:
         pred_name, conf, is_certain = predict_face(face_crop)
 
         if is_certain:
-            # ── Stable-frame accumulation (FIX: actually update the set) ──
             names_this_frame.add(pred_name)
             stable_detections[pred_name] = stable_detections.get(pred_name, 0) + 1
 
@@ -155,8 +144,7 @@ while True:
             box_color = (0, 200, 80)   # green
 
             # Only mark after STABLE_FRAMES_NEEDED consecutive certain detections
-            if (stable_detections[pred_name] >= STABLE_FRAMES_NEEDED
-                    and pred_name not in marked_today):
+            if (stable_detections[pred_name] >= STABLE_FRAMES_NEEDED and pred_name not in marked_today and pred_name != "Unknown"):
                 mark_attendance(pred_name)
                 marked_today.add(pred_name)
         else:
@@ -176,7 +164,6 @@ while True:
         cv2.putText(frame, label, (x + 4, y - 5),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
 
-    # Decay stable counters for faces no longer on screen (FIX: was broken before)
     for tracked_name in list(stable_detections.keys()):
         if tracked_name not in names_this_frame:
             stable_detections[tracked_name] = max(0, stable_detections[tracked_name] - 1)
