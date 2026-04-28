@@ -1,19 +1,21 @@
-# 🎯 Face Detection & Recognition (PyTorch + OpenCV)
+# 🎯 Face Recognition & Attendance System
+### PyTorch + OpenCV
 
-A complete pipeline for **face detection, preprocessing, training, and evaluation** using **OpenCV** and **PyTorch**.
+A complete end-to-end pipeline for **face detection, deep learning training, and real-time biometric attendance** using **OpenCV** and **PyTorch**.
 
-This project:
+This system has been optimized to handle **18 identities** (17 specific individuals + 1 "Unknown" class) with a focus on high generalization, bridging the gap between training environments and real-world deployment.
 
-* Detects faces from raw images
-* Preprocesses and organizes them
-* Trains a custom CNN model
-* Evaluates performance
+---
 
-🚧 **Planned Updates**
+## 🚀 Performance Metrics
 
-* Real-time webcam face detection
-* Face recognition (identity prediction)
-* Detection logging to file
+| Metric | Value |
+|---|---|
+| Training Accuracy | ~97% |
+| Testing Accuracy | ~83% |
+| Train/Test Gap | ~14% (reduced from ~20%) |
+
+> **Optimization:** Overfitting was significantly reduced using L2 Regularization (Weight Decay), high Dropout (0.7), and aggressive Data Augmentation.
 
 ---
 
@@ -22,197 +24,114 @@ This project:
 ```
 .
 ├── dataset/           # Raw images (organized by person)
-├── faces/             # Extracted face images
-├── detect.py          # Face detection & preprocessing
-├── train.py           # Model training
-├── test.py            # Model evaluation
-├── face_model.pth     # Saved trained model
+├── faces/             # Extracted & aligned face crops (100×100)
+├── attendance/        # Auto-generated CSV attendance logs
+├── detect.py          # Face detection & preprocessing (Haar Cascades)
+├── model.py           # Deep 4-Layer CNN Architecture
+├── train.py           # Model training with Data Augmentation
+├── test.py            # Independent model evaluation script
+├── camera.py          # Real-time recognition & attendance logger
+├── face_model.pth     # Saved trained weights
 └── README.md
 ```
 
 ---
 
-## ⚙️ Features
+## ⚙️ Key Features
 
-* Face detection using Haar Cascade
-* Automatic dataset processing
-* Largest face selection per image
-* Image resizing (100x100)
-* Data augmentation for robustness
-* Custom CNN built from scratch
-* Train/test split with reproducibility
-* Accuracy and loss tracking
+- **Haar Cascade Integration** — Fast face localization with optimized 5% padding for feature isolation.
+- **4-Layer CNN Architecture** — Deep feature extraction using BatchNorm, LeakyReLU, and high Dropout (0.7) to prevent memorization.
+- **Smart Attendance Logging** — Real-time recognition with live CSV logging and duplication prevention (logs each person once per day).
+- **Robust Training** — Implements Label Smoothing (0.05) and Weight Decay (1e-2) to ensure the model generalizes across new lighting conditions and angles.
+- **Dynamic Data Augmentation** — Real-time synthesis of sharpness, rotation, and color shifts during training.
 
 ---
 
 ## 🧠 Pipeline Overview
 
-### 1️⃣ Face Detection (`detect.py`)
+### 1️⃣ Preprocessing — `detect.py`
 
-* Reads images from `dataset/`
-* Converts to grayscale
-* Detects faces using OpenCV
-* Keeps largest face
-* Saves processed faces to `faces/`
+- Scans `dataset/` and converts raw images to grayscale.
+- Detects faces and isolates the largest face per image.
+- Crops and resizes to **100×100** resolution to focus the CNN on internal facial geometry rather than background pixels.
 
----
+### 2️⃣ Training — `train.py`
 
-### 2️⃣ Training (`train.py`)
+- **Augmentations:** Horizontal flips, 15° rotations, color jitter, and sharpness adjustments.
+- **Loss:** `CrossEntropyLoss` with label smoothing to discourage over-confident incorrect predictions.
+- **Scheduler:** `ReduceLROnPlateau` for precise weight convergence once the loss curve stalls.
 
-* Loads processed dataset
-* Applies augmentations:
+### 3️⃣ Real-Time Inference — `camera.py`
 
-  * Random horizontal flip
-  * Rotation
-  * Grayscale variation
-* Trains CNN model
-* Saves weights as `face_model.pth`
-
----
-
-### 3️⃣ Testing (`test.py`)
-
-* Loads trained model
-* Evaluates on test split
-* Outputs:
-
-  * Accuracy
-  * Loss
+- Live webcam feed processing with identity mapping.
+- **Thresholding:** Requires a softmax confidence of ≥ 80% for identity verification.
+- **Visual Feedback:** 🟢 Green bounding boxes for verified users, 🔴 Red for "Unknown" or low-confidence detections.
 
 ---
 
 ## 🧱 CNN Architecture
 
 ```
-Input (3x100x100)
-↓
-Conv2D (16) + LeakyReLU + MaxPool
-↓
-Conv2D (32) + LeakyReLU + MaxPool
-↓
-Conv2D (64) + LeakyReLU + MaxPool
-↓
-Flatten
-↓
-Linear (128) + LeakyReLU
-↓
-Dropout (0.6)
-↓
-Output Layer (num_classes)
+Input (3 × 100 × 100)
+        ↓
+Conv Block 1 — 32 filters  | BatchNorm + LeakyReLU + MaxPool
+        ↓
+Conv Block 2 — 64 filters  | BatchNorm + LeakyReLU + MaxPool
+        ↓
+Conv Block 3 — 128 filters | BatchNorm + LeakyReLU + MaxPool
+        ↓
+Conv Block 4 — 256 filters | BatchNorm + LeakyReLU + MaxPool
+        ↓
+AdaptiveAvgPool (4 × 4)
+        ↓
+Fully Connected — 1024 nodes | LeakyReLU + Dropout (0.7)
+        ↓
+Fully Connected — 512 nodes  | LeakyReLU
+        ↓
+Output Layer — 18 Classes
 ```
+
+---
+
+## 🛠️ Installation & Usage
+
+### 1. Install Dependencies
+
+```bash
+pip install opencv-python torch torchvision tqdm pillow
+```
+
+### 2. Run the Pipeline
+
+| Step | Command | Description |
+|---|---|---|
+| Prepare | *(manual)* | Place raw images in `dataset/person_name/` |
+| Detect | `python detect.py` | Extract and save face crops |
+| Train | `python train.py` | Train the CNN model |
+| Evaluate | `python test.py` | Run evaluation on the test set |
+| Deploy | `python camera.py` | Start real-time attendance system |
 
 ---
 
 ## 📦 Libraries Used
 
-* Python 3.x
-* opencv-python
-* torch
-* torchvision
-* tqdm
-
----
-
-## 🛠️ Installation
-
-### 1. Clone Repository
-
-```
-git clone https://github.com/your-username/face-recognition.git
-cd face-recognition
-```
-
-### 2. Install Dependencies
-
-```
-pip install opencv-python torch torchvision tqdm
-```
-
-👉 For GPU support, install PyTorch with CUDA:
-https://pytorch.org/get-started/locally/
-
----
-
-## ▶️ Usage
-
-### Step 1: Prepare Dataset
-
-```
-dataset/
-├── person1/
-│   ├── img1.jpg
-│   ├── img2.jpg
-│
-├── person2/
-│   ├── img1.jpg
-│   ├── img2.jpg
-```
-
----
-
-### Step 2: Detect Faces
-
-```
-python detect.py
-```
-
----
-
-### Step 3: Train Model
-
-```
-python train.py
-```
-
----
-
-### Step 4: Test Model
-
-```
-python test.py
-```
-
----
-
-## 📊 Example Output
-
-```
-Epoch 10/50
-Train Loss : 0.3456
-Train Acc  : 89.25%
-```
-
-```
-Test Accuracy: 85.40%
-```
-
----
-
-## 🚀 Future Improvements
-
-* [ ] Real-time webcam detection
-* [ ] Face recognition (embedding-based)
-* [ ] Logging system (CSV / database)
-* [ ] GUI interface
-* [ ] Model optimization
-
----
-
-## ⚠️ Notes
-
-* Use clear, well-lit face images
-* More images per person = better results
-* Avoid extreme angles and occlusions
+| Library | Purpose |
+|---|---|
+| OpenCV | Face detection and image processing |
+| PyTorch | Neural network training and inference |
+| Torchvision | Data transformations and datasets |
+| Tqdm | Training progress visualization |
+| Pillow | Image loading and format handling |
 
 ---
 
 ## 📜 License
 
-This project is open-source and available under the MIT License.
+This project is open-source and available under the **MIT License**.
 
 ---
 
 ## 👨‍💻 Author
 
-Zaid Faraz
-GitHub: https://github.com/your-username](https://github.com/zaidfaraz45)
+**Zaid Faraz**  
+GitHub: [@zaidfaraz45](https://github.com/zaidfaraz45)

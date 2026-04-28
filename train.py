@@ -17,12 +17,10 @@ train_transform = transforms.Compose([
     transforms.Resize((100, 100)),
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomRotation(degrees=15),
-    transforms.RandomGrayscale(p=0.2),
+    transforms.ColorJitter(brightness=0.3, contrast=0.3),
+    transforms.RandomAdjustSharpness(sharpness_factor=2, p=0.5),
     transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.5, 0.5, 0.5],
-        std=[0.5, 0.5, 0.5]
-    )
+    transforms.Normalize(mean=[0.5]*3, std=[0.5]*3)
 ])
 
 dataset = datasets.ImageFolder(root=data_path, transform=train_transform)
@@ -35,7 +33,7 @@ train_dataset, test_dataset = random_split(dataset, [train_size, test_size], gen
 
 train_loader = DataLoader(
     train_dataset,
-    batch_size=8,
+    batch_size=16,
     shuffle=True
 )
 
@@ -46,13 +44,15 @@ print("\nClasses:", dataset.classes, end='\n\n')
 model = CNN(num_classes).to(device)
 
 # Loss and optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-3)  # weight decay for regularization
+criterion = nn.CrossEntropyLoss(label_smoothing=0.05)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-2)  # weight decay for regularization
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
 # Training loop
-epochs = 75
+epochs = 100
 
 for epoch in range(epochs):
+    model.train()
     total_loss = 0
     correct = 0
     total = 0
@@ -81,12 +81,13 @@ for epoch in range(epochs):
     avg_loss = total_loss / len(train_loader)
     train_acc = 100 * correct / total
     
+    scheduler.step(avg_loss)
+    
     # Print accuracy and loss for each epoch
     print(f"Epoch {epoch+1}/{epochs}")
     print(f"Train Loss : {avg_loss:.4f}")
     print(f"Train Acc  : {train_acc:.2f}%")
     print("-" * 50)
-
     
 # Save model
 torch.save(model.state_dict(), "face_model.pth")

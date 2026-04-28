@@ -47,8 +47,8 @@ for person in os.listdir(input_path):
         faces = faces[:1]
 
         for (x, y, w, h) in faces:
-            pad_w = int(w * 0.15)
-            pad_h = int(h * 0.15)
+            pad_w = int(w * 0.05)
+            pad_h = int(h * 0.05)
             
             y1 = max(0, y - pad_h)
             y2 = min(img.shape[0], y + h + pad_h)

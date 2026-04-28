@@ -17,6 +17,11 @@ class CNN(nn.Module):
             nn.Conv2d(64, 128, 3, padding=1),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(),
+            nn.MaxPool2d(2, 2),
+
+            nn.Conv2d(128, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(),
             nn.MaxPool2d(2, 2)
         )
         
@@ -24,12 +29,12 @@ class CNN(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(128 * 4 * 4, 512), 
+            nn.Linear(256 * 4 * 4, 1024),
             nn.LeakyReLU(),
-            nn.Dropout(0.6),             
-            nn.Linear(512, 128),         
+            nn.Dropout(0.7),        # High dropout to stop memorization
+            nn.Linear(1024, 512),   # Extra reasoning layer
             nn.LeakyReLU(),
-            nn.Linear(128, num_classes)
+            nn.Linear(512, num_classes)
         )
 
     def forward(self, x):
