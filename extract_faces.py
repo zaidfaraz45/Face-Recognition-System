@@ -47,6 +47,10 @@ for person in os.listdir(input_path):
         faces = faces[:1]
 
         for (x, y, w, h) in faces:
+            aspect_ratio = w / float(h)
+            if aspect_ratio < 0.8 or aspect_ratio > 1.2:
+                continue
+            
             pad_w = int(w * 0.05)
             pad_h = int(h * 0.05)
             
