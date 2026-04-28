@@ -122,7 +122,7 @@ while True:
 
         name, conf = predict_face(face_crop)
 
-        if conf >= 0.85:
+        if conf >= 0.80 and name != "Unknown":
             label     = f"{name}  {conf*100:.1f}%"
             box_color = (0, 200, 80)     # green
 
