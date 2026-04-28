@@ -28,14 +28,14 @@ class CNN(nn.Module):
         self.pool = nn.AdaptiveAvgPool2d((4, 4))
 
         self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(256 * 4 * 4, 1024),
-            nn.LeakyReLU(),
-            nn.Dropout(0.7),        # High dropout to stop memorization
-            nn.Linear(1024, 512),   # Extra reasoning layer
-            nn.LeakyReLU(),
-            nn.Linear(512, num_classes)
-        )
+                nn.Flatten(),
+                nn.Linear(256 * 4 * 4, 512),
+                nn.LeakyReLU(),
+                nn.Dropout(0.5),             # Standard dropout
+                nn.Linear(512, 256),        
+                nn.LeakyReLU(),
+                nn.Linear(256, num_classes)
+            )
 
     def forward(self, x):
         x = self.conv(x)
