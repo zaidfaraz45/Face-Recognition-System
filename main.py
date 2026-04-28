@@ -8,6 +8,7 @@ from datetime import datetime
 from torchvision import transforms, datasets
 from PIL import Image
 
+# Device agnostic code
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 print("Using device:", device)
 
@@ -104,14 +105,18 @@ while True:
     faces = face_cascade.detectMultiScale(
         gray,
         scaleFactor=1.1,
-        minNeighbors=5,          # Reduced from 10 — was filtering out real faces
-        minSize=(120, 120)
+        minNeighbors=10,
+        minSize=(100, 100)
     )
     
     current_faces_on_screen = set()
 
     for (x, y, w, h) in faces:
-        pad_w, pad_h = int(w * 0.05), int(h * 0.05)  # Matched to detect.py (was 0.15 — mismatched training distribution)
+        aspect_ratio = w / float(h)
+        if not (0.75 < aspect_ratio < 1.3):
+            continue
+        
+        pad_w, pad_h = int(w * 0.15), int(h * 0.15)
         y1, y2 = max(0, y - pad_h), min(frame.shape[0], y + h + pad_h)
         x1, x2 = max(0, x - pad_w), min(frame.shape[1], x + w + pad_w)
         
@@ -122,7 +127,7 @@ while True:
 
         name, conf = predict_face(face_crop)
 
-        if conf >= 0.80 and name != "Unknown":
+        if conf >= 0.85 and name != "Unknown":
             label     = f"{name}  {conf*100:.1f}%"
             box_color = (0, 200, 80)     # green
 
