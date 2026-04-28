@@ -8,6 +8,7 @@ from datetime import datetime
 from torchvision import transforms, datasets
 from PIL import Image
 
+# Device agnostic code
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 print("Using device:", device)
 
@@ -104,8 +105,8 @@ while True:
     faces = face_cascade.detectMultiScale(
         gray,
         scaleFactor=1.1,
-        minNeighbors=10,
-        minSize=(120, 120)
+        minNeighbors=5,
+        minSize=(60, 60)
     )
     
     current_faces_on_screen = set()
