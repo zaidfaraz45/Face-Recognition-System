@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class CNN(nn.Module):
     def __init__(self, num_classes):
         super(CNN, self).__init__()
@@ -24,21 +25,20 @@ class CNN(nn.Module):
             nn.LeakyReLU(),
             nn.MaxPool2d(2, 2)
         )
-        
+
         self.pool = nn.AdaptiveAvgPool2d((4, 4))
 
         self.fc = nn.Sequential(
-                nn.Flatten(),
-                nn.Linear(256 * 4 * 4, 512),
-                nn.LeakyReLU(),
-                nn.Dropout(0.5),             # Standard dropout
-                nn.Linear(512, 256),        
-                nn.LeakyReLU(),
-                nn.Linear(256, num_classes)
-            )
+            nn.Flatten(),
+            nn.Linear(256 * 4 * 4, 512),
+            nn.LeakyReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, num_classes)
+        )
 
     def forward(self, x):
         x = self.conv(x)
         x = self.pool(x)
         return self.fc(x)
-
