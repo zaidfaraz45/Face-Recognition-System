@@ -15,10 +15,10 @@ data_path = 'faces'
 # This code applies data augmentation during training to improve model accuracy.
 train_transform = transforms.Compose([
     transforms.Resize((100, 100)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(20),    
-    transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)), 
-    transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2), 
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.RandomRotation(degrees=15),
+    transforms.ColorJitter(brightness=0.3, contrast=0.3),
+    transforms.RandomAdjustSharpness(sharpness_factor=2, p=0.5),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5]*3, std=[0.5]*3)
 ])
@@ -44,8 +44,8 @@ print("\nClasses:", dataset.classes, end='\n\n')
 model = CNN(num_classes).to(device)
 
 # Loss and optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)  # weight decay for regularization
+criterion = nn.CrossEntropyLoss(label_smoothing=0.05)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-2)  # weight decay for regularization
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
 # Training loop
